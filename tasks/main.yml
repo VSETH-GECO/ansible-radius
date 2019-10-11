@@ -1,0 +1,72 @@
+---
+  - name: Install FreeRADIUS
+    become: True
+    apt:
+      name:
+        - freeradius
+        - freeradius-utils
+        - freeradius-mysql
+      state: present
+      update_cache: yes
+      cache_valid_time: 1800
+
+  - name: Upload new FreeRADIUS sites
+    become: True
+    template: src="{{ item }}.j2" dest="/etc/freeradius/3.0/sites-available/{{ item }}" owner=root group=freerad mode=0644
+    notify: restart freeradius
+    with_items:
+      - default
+      - inner-tunnel
+
+  - name: Check if DH parameters exist
+    stat: path="/etc/freeradius/3.0/certs/dh"
+    register: dhfile
+    changed_when: False
+
+  - name: Generate DH parameters
+    local_action: command openssl dhparam -outform PEM -out "{{ ansible_nodename }}-dh.pem" 2048
+    when: not dhfile.stat.exists
+
+  - name: Copy DH parameters to server
+    copy: src="{{ansible_nodename}}-dh.pem" dest="/etc/freeradius/3.0/certs/dh"
+    when: not dhfile.stat.exists
+
+  - name: Configure FreeRADIUS base modules
+    become: True
+    template: src="{{ item }}.j2" dest="/etc/freeradius/3.0/{{ item }}" owner=root group=freerad mode=0644
+    notify: restart freeradius
+    with_items:
+      - clients.conf
+      - radiusd.conf
+
+  - name: Configure FreeRADIUS modules
+    become: True
+    template:
+      src: "{{ item }}.j2"
+      dest: "/etc/freeradius/3.0/mods-available/{{ item }}"
+      owner: root
+      group: freerad
+      mode: 0644
+    notify: restart freeradius
+    with_items:
+      - eap
+      - sql
+
+  - name: Enable FreeRADIUS modules
+    become: True
+    file:
+      src: "/etc/freeradius/3.0/mods-available/{{ item }}"
+      path: "/etc/freeradius/3.0/mods-enabled/{{ item }}"
+      state: link
+    with_items:
+      - sql
+      - eap
+
+  - name: Configure FreeRADIUS user file
+    become: True
+    template: src="authorize.j2" dest="/etc/freeradius/3.0/mods-config/files/authorize" owner=root group=freerad mode=0644
+    notify: restart freeradius
+
+  - name: Enable FreeRADIUS
+    become: True
+    service: name=freeradius enabled=yes

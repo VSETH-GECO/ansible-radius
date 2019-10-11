@@ -1,0 +1,7 @@
+---
+  - name: restart freeradius
+    become: True
+    service:
+      name: freeradius
+      state: restarted
+      enabled: yes

@@ -1,0 +1,15 @@
+radius_static_clients: []
+#  - name: fooswitch
+#    secret: donttellanyone
+#    subnet: 127.0.0.1/32
+radius_static_users: []
+# Note: MAC MUST NOT CONTAIN : or - !!
+#  - name: foo
+#    vlan: 1
+#    mac: 012345678901
+
+radius_mysql_host: 127.0.01
+radius_mysql_port: 3306
+radius_mysql_database: ''
+radius_mysql_user: ''
+radius_mysql_password: ''
