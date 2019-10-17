@@ -8,6 +8,8 @@ radius_static_users: []
 #    vlan: 1
 #    mac: 012345678901
 
+radius_authorize_everyone: True
+
 radius_mysql_host: 127.0.01
 radius_mysql_port: 3306
 radius_mysql_database: ''
